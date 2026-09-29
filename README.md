@@ -1,4 +1,4 @@
-# Daymark To-do App
+# Todo App
 
 A full-stack to-do application with a native Node.js HTTP server, Prisma ORM, MySQL, JWT authentication, and a vanilla JavaScript single-page interface.
 

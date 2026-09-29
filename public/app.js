@@ -63,7 +63,7 @@ function setAuthMode(mode) {
   document.querySelector('#register-tab').setAttribute('aria-selected', String(!isLogin));
   document.querySelector('#form-heading').textContent = isLogin ? 'Welcome back' : 'Start with a fresh page';
   document.querySelector('#form-caption').textContent = isLogin ? 'Pick up where you left off.' : 'Create an account to keep your tasks close.';
-  document.querySelector('#auth-submit').innerHTML = isLogin ? 'Sign in <span aria-hidden="true">↗</span>' : 'Create account <span aria-hidden="true">↗</span>';
+  document.querySelector('#auth-submit').textContent = isLogin ? 'Sign in' : 'Create account';
   document.querySelector('#password').autocomplete = isLogin ? 'current-password' : 'new-password';
   setMessage(authMessage, '');
 }
