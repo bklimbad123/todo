@@ -92,6 +92,11 @@ input::placeholder { color: #888888; }
 .progress-caption { display: block; font-size: 11px; }
 
 .composer { padding: 16px; border: 1px solid var(--border); background: var(--surface); }
+.list-controls { display: flex; gap: 8px; margin-bottom: 12px; }
+.list-controls select, .list-controls input { height: 36px; }
+.list-controls select { flex: 1; }
+.list-controls input { width: 150px; }
+.list-controls .button { min-height: 36px; padding: 0 10px; }
 .composer-main { display: flex; align-items: center; gap: 10px; }
 .composer input { height: 38px; border: 0; background: transparent; box-shadow: none; }
 .composer input:focus { box-shadow: none; }
@@ -133,6 +138,8 @@ input::placeholder { color: #888888; }
   .workspace-heading h1 { font-size: 26px; }
   .workspace-subtitle { line-height: 1.4; }
   .composer-main { align-items: stretch; flex-wrap: wrap; }
+  .list-controls { flex-wrap: wrap; }
+  .list-controls select, .list-controls input { width: 100%; }
   .composer #todo-title { min-width: calc(100% - 32px); }
   .add-button { margin-left: 32px; }
   .todo-actions { opacity: 1; }

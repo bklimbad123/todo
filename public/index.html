@@ -76,6 +76,13 @@
         </div>
 
         <form class="composer" id="todo-form">
+          <div class="list-controls">
+            <select id="todo-list-id" name="listId" aria-label="Task list" required>
+              <option value="" disabled selected>Select a list</option>
+            </select>
+            <input id="new-list-name" type="text" placeholder="New list name" maxlength="100" aria-label="New list name">
+            <button class="button" id="create-list" type="button">Create list</button>
+          </div>
           <div class="composer-main">
             <input id="todo-title" name="title" type="text" placeholder="What needs your attention?" maxlength="255" required autocomplete="off" aria-label="New task title">
             <button class="button button-primary add-button" type="submit">Add task</button>

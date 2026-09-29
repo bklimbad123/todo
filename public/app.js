@@ -7,10 +7,14 @@ const logoutButton = document.querySelector('#logout-button');
 const todoList = document.querySelector('#todo-list');
 const emptyState = document.querySelector('#empty-state');
 const todoForm = document.querySelector('#todo-form');
+const listSelect = document.querySelector('#todo-list-id');
+const newListName = document.querySelector('#new-list-name');
+const createListButton = document.querySelector('#create-list');
 
 let authMode = 'login';
 let filter = 'all';
 let todos = [];
+let lists = [];
 
 const today = new Date();
 document.querySelector('#today-label').textContent = new Intl.DateTimeFormat(undefined, {
@@ -44,6 +48,7 @@ function showAuth() {
   todoView.classList.add('hidden');
   logoutButton.classList.add('hidden');
   todos = [];
+  lists = [];
 }
 
 function showWorkspace(user) {
@@ -51,7 +56,39 @@ function showWorkspace(user) {
   todoView.classList.remove('hidden');
   logoutButton.classList.remove('hidden');
   document.querySelector('#welcome-copy').textContent = `Signed in as ${user.email}. A clear list makes a little room for everything else.`;
+  loadLists();
   loadTodos();
+}
+
+async function loadLists() {
+  try {
+    const result = await request('/api/lists');
+    lists = result.data;
+    listSelect.replaceChildren(new Option('Select a list', '', true, true));
+    for (const list of lists) listSelect.append(new Option(list.name, list.id));
+  } catch (error) {
+    setMessage(todoMessage, error.message);
+  }
+}
+
+async function createList() {
+  const name = newListName.value.trim();
+  if (!name) return;
+  createListButton.disabled = true;
+  try {
+    const result = await request('/api/lists', {
+      method: 'POST', body: JSON.stringify({ name })
+    });
+    lists.push(result.data);
+    listSelect.append(new Option(result.data.name, result.data.id));
+    listSelect.value = result.data.id;
+    newListName.value = '';
+    setMessage(todoMessage, 'List created.', true);
+  } catch (error) {
+    setMessage(todoMessage, error.message);
+  } finally {
+    createListButton.disabled = false;
+  }
 }
 
 function setAuthMode(mode) {
@@ -243,7 +280,8 @@ todoForm.addEventListener('submit', async (event) => {
       method: 'POST', body: JSON.stringify({
         title: formData.get('title'),
         description: formData.get('description') || null,
-        dueAt: formData.get('dueAt') || null
+        dueAt: formData.get('dueAt') || null,
+        listId: formData.get('listId') || null
       })
     });
     todos.unshift(result.data);
@@ -259,6 +297,7 @@ todoForm.addEventListener('submit', async (event) => {
 });
 
 logoutButton.addEventListener('click', showAuth);
+createListButton.addEventListener('click', createList);
 
 async function restoreSession() {
   const token = localStorage.getItem('daymark-token');

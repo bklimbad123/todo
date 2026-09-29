@@ -60,11 +60,11 @@ Open [http://localhost:5000](http://localhost:5000) in your browser. The server 
 
 - `POST /api/auth/register` - create an account with `{ "firstName", "lastName", "gender", "email", "password" }`
 - `POST /api/auth/login` - sign in; returns a JWT and user details
+- `GET /api/lists` - list the authenticated user's task lists
+- `POST /api/lists` - create a list with `{ "name" }`
 - `GET /api/todos` - list the authenticated user's todos
-￼
-
-- `POST /api/todos` - create a todo with `{ "title", "description", "dueAt" }`
-- `PUT /api/todos/:id` - update a todo's `title`, `description`, `dueAt`, and/or `isCompleted`
+- `POST /api/todos` - create a todo with `{ "title", "description", "dueAt", "listId" }`; `listId` is required
+- `PUT /api/todos/:id` - update a todo's `title`, `description`, `dueAt`, `listId`, and/or `isCompleted`
 - `DELETE /api/todos/:id` - delete a todo
 
 For protected routes, send the login token in the `Authorization` header as `Bearer <token>`. Passwords must be at least 8 characters. All todo operations are scoped to the authenticated owner.

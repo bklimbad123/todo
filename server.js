@@ -154,6 +154,25 @@ async function handleRequest(req, res) {
     return;
   }
 
+  if (req.method === 'GET' && pathname === '/api/lists') {
+    const user = authenticate(req);
+    const lists = await prisma.taskList.findMany({
+      where: { userId: user.userId },
+      orderBy: { createdAt: 'asc' }
+    });
+    sendJson(res, 200, { success: true, data: lists });
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/lists') {
+    const user = authenticate(req);
+    const body = await parseBody(req);
+    const name = requireString(body?.name, 'List name', 100);
+    const list = await prisma.taskList.create({ data: { name, userId: user.userId } });
+    sendJson(res, 201, { success: true, data: list });
+    return;
+  }
+
   if (req.method === 'GET' && pathname === '/api/todos') {
     const user = authenticate(req);
     const todos = await prisma.todo.findMany({
@@ -170,8 +189,11 @@ async function handleRequest(req, res) {
     const title = requireString(body?.title, 'Title', 255);
     const description = body?.description == null ? null : requireString(body.description, 'Description', 10000);
     const dueAt = parseDueDate(body?.dueAt);
+    const listId = requireString(body?.listId, 'List', 30);
+    const list = await prisma.taskList.findFirst({ where: { id: listId, userId: user.userId } });
+    if (!list) throw new HttpError(404, 'List not found');
     const todo = await prisma.todo.create({
-      data: { title, description, dueAt, userId: user.userId }
+      data: { title, description, dueAt, listId, userId: user.userId }
     });
     sendJson(res, 201, { success: true, data: todo });
     return;
@@ -197,6 +219,13 @@ async function handleRequest(req, res) {
       }
       if (Object.hasOwn(body ?? {}, 'dueAt')) {
         data.dueAt = parseDueDate(body.dueAt);
+      }
+      if (Object.hasOwn(body ?? {}, 'listId')) {
+        data.listId = body.listId || null;
+        if (data.listId) {
+          const list = await prisma.taskList.findFirst({ where: { id: data.listId, userId: user.userId } });
+          if (!list) throw new HttpError(404, 'List not found');
+        }
       }
       if (Object.hasOwn(body ?? {}, 'isCompleted')) {
         if (typeof body.isCompleted !== 'boolean') {
