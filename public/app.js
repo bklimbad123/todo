@@ -63,28 +63,20 @@ function setAuthMode(mode) {
   document.querySelector('#register-tab').setAttribute('aria-selected', String(!isLogin));
   document.querySelector('#form-heading').textContent = isLogin ? 'Welcome back' : 'Start with a fresh page';
   document.querySelector('#form-caption').textContent = isLogin ? 'Pick up where you left off.' : 'Create an account to keep your tasks close.';
+  document.querySelector('#registration-fields').classList.toggle('hidden', isLogin);
+  document.querySelector('#first-name').required = !isLogin;
+  document.querySelector('#last-name').required = !isLogin;
+  document.querySelector('#gender').required = !isLogin;
   document.querySelector('#auth-submit').textContent = isLogin ? 'Sign in' : 'Create account';
   document.querySelector('#password').autocomplete = isLogin ? 'current-password' : 'new-password';
   setMessage(authMessage, '');
 }
 
-function makeIcon(path) {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('aria-hidden', 'true');
-  const iconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  iconPath.setAttribute('d', path);
-  svg.append(iconPath);
-  return svg;
-}
-
-function actionButton(label, iconPath, handler) {
+function actionButton(label, handler) {
   const button = document.createElement('button');
   button.className = 'icon-button';
   button.type = 'button';
-  button.setAttribute('aria-label', label);
-  button.title = label;
-  button.append(makeIcon(iconPath));
+  button.textContent = label;
   button.addEventListener('click', handler);
   return button;
 }
@@ -119,11 +111,19 @@ function renderTodos() {
       description.textContent = todo.description;
       content.append(description);
     }
+    if (todo.dueAt) {
+      const dueDate = document.createElement('p');
+      dueDate.className = 'todo-due-date';
+      dueDate.textContent = `Due ${new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium', timeStyle: 'short'
+      }).format(new Date(todo.dueAt))}`;
+      content.append(dueDate);
+    }
 
     const actions = document.createElement('div');
     actions.className = 'todo-actions';
-    actions.append(actionButton('Edit task', 'M12 20h9 M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z', () => editTodo(todo)));
-    actions.append(actionButton('Delete task', 'M3 6h18 M8 6V4h8v2 M19 6l-1 14H6L5 6 M10 11v5 M14 11v5', () => deleteTodo(todo)));
+    actions.append(actionButton('Edit', () => editTodo(todo)));
+    actions.append(actionButton('Delete', () => deleteTodo(todo)));
     item.append(check, content, actions);
     todoList.append(item);
   }
@@ -209,7 +209,13 @@ authForm.addEventListener('submit', async (event) => {
   const formData = new FormData(authForm);
   try {
     const result = await request(`/api/auth/${authMode === 'login' ? 'login' : 'register'}`, {
-      method: 'POST', body: JSON.stringify({ email: formData.get('email'), password: formData.get('password') })
+      method: 'POST', body: JSON.stringify({
+        firstName: formData.get('firstName'),
+        lastName: formData.get('lastName'),
+        gender: formData.get('gender'),
+        email: formData.get('email'),
+        password: formData.get('password')
+      })
     });
     if (authMode === 'register') {
       setAuthMode('login');
@@ -234,7 +240,11 @@ todoForm.addEventListener('submit', async (event) => {
   const formData = new FormData(todoForm);
   try {
     const result = await request('/api/todos', {
-      method: 'POST', body: JSON.stringify({ title: formData.get('title'), description: formData.get('description') || null })
+      method: 'POST', body: JSON.stringify({
+        title: formData.get('title'),
+        description: formData.get('description') || null,
+        dueAt: formData.get('dueAt') || null
+      })
     });
     todos.unshift(result.data);
     todoForm.reset();

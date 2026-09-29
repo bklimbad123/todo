@@ -32,6 +32,26 @@
           <form id="auth-form">
             <h2 id="form-heading">Welcome back</h2>
             <p class="form-caption" id="form-caption">Pick up where you left off.</p>
+            <div class="registration-fields hidden" id="registration-fields">
+              <div>
+                <label for="first-name">First name</label>
+                <input id="first-name" name="firstName" type="text" autocomplete="given-name" placeholder="First name" maxlength="100">
+              </div>
+              <div>
+                <label for="last-name">Last name</label>
+                <input id="last-name" name="lastName" type="text" autocomplete="family-name" placeholder="Last name" maxlength="100">
+              </div>
+              <div>
+                <label for="gender">Gender</label>
+                <select id="gender" name="gender" autocomplete="sex">
+                  <option value="">Select gender</option>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                  <option value="non-binary">Non-binary</option>
+                  <option value="prefer-not-to-say">Prefer not to say</option>
+                </select>
+              </div>
+            </div>
             <label for="email">Email address</label>
             <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required maxlength="254">
             <label for="password">Password</label>
@@ -45,7 +65,7 @@
       <section class="todo-view hidden" id="todo-view" aria-labelledby="greeting">
         <div class="workspace-heading">
           <div>
-            <p class="eyebrow" id="workspace-date"></p>
+            <p id="workspace-date"></p>
             <h1 id="greeting">Your day, in good order.</h1>
             <p class="workspace-subtitle" id="welcome-copy">A clear list makes a little room for everything else.</p>
           </div>
@@ -57,11 +77,12 @@
 
         <form class="composer" id="todo-form">
           <div class="composer-main">
-            <span class="composer-plus" aria-hidden="true">+</span>
             <input id="todo-title" name="title" type="text" placeholder="What needs your attention?" maxlength="255" required autocomplete="off" aria-label="New task title">
             <button class="button button-primary add-button" type="submit">Add task</button>
           </div>
           <input id="todo-description" name="description" type="text" placeholder="Add a note (optional)" maxlength="10000" aria-label="Optional task note">
+          <label class="due-date-label" for="todo-due-at">Due date and time</label>
+          <input id="todo-due-at" name="dueAt" type="datetime-local" aria-label="Task due date and time">
         </form>
         <p class="status-message workspace-message" id="todo-message" role="status" aria-live="polite"></p>
 
@@ -71,18 +92,14 @@
             <button class="filter-tab" type="button" data-filter="active" aria-pressed="false">To do <span id="active-count">0</span></button>
             <button class="filter-tab" type="button" data-filter="completed" aria-pressed="false">Done <span id="completed-count">0</span></button>
           </div>
-          <span class="list-label">YOUR TASKS</span>
         </div>
         <ul class="todo-list" id="todo-list" aria-label="Todo list"></ul>
         <div class="empty-state" id="empty-state">
-          <span class="empty-symbol" aria-hidden="true">✳</span>
           <p id="empty-title">Nothing on the list yet.</p>
           <span id="empty-caption">Add a task above to get started.</span>
         </div>
-        <footer class="workspace-footer"><span>One thing at a time.</span><span class="footer-dot"></span><span id="footer-count">0 open tasks</span></footer>
+        <footer class="workspace-footer"><span id="footer-count">0 open tasks</span></footer>
       </section>
-
-      <footer class="site-footer"><span>DAYMARK</span><span>Make today count, gently.</span></footer>
     </main>
   </body>
 </html>

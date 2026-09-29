@@ -20,7 +20,7 @@ body {
   line-height: 1.5;
 }
 
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button { color: inherit; }
 .hidden { display: none !important; }
 
@@ -69,10 +69,11 @@ button { color: inherit; }
 .auth-tab.is-selected { color: var(--text); border-bottom: 2px solid var(--accent); }
 #auth-form h2 { margin: 0; font-size: 20px; }
 .form-caption { margin: 6px 0 24px; }
+.registration-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 label { display: block; margin: 16px 0 6px; font-size: 13px; font-weight: 700; }
-input { width: 100%; min-width: 0; height: 40px; padding: 0 10px; border: 1px solid var(--border); border-radius: 3px; outline: none; background: var(--background); color: var(--text); }
-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px #eeeeee; }
+input, select { width: 100%; min-width: 0; height: 40px; padding: 0 10px; border: 1px solid var(--border); border-radius: 3px; outline: none; background: var(--background); color: var(--text); }
+input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px #eeeeee; }
 input::placeholder { color: #888888; }
 .status-message { min-height: 18px; margin: 10px 0 0; color: #a12626; font-size: 13px; }
 .status-message.is-success { color: #216b36; }
@@ -92,11 +93,12 @@ input::placeholder { color: #888888; }
 
 .composer { padding: 16px; border: 1px solid var(--border); background: var(--surface); }
 .composer-main { display: flex; align-items: center; gap: 10px; }
-.composer-plus { font-size: 22px; }
 .composer input { height: 38px; border: 0; background: transparent; box-shadow: none; }
 .composer input:focus { box-shadow: none; }
 .composer #todo-title { flex: 1; }
 .composer #todo-description { width: calc(100% - 28px); height: 32px; margin-left: 28px; color: var(--muted); }
+.due-date-label { margin: 10px 0 4px 28px; color: var(--muted); font-size: 12px; font-weight: 400; }
+.composer #todo-due-at { width: calc(100% - 28px); height: 34px; margin-left: 28px; }
 .add-button { min-width: 88px; min-height: 38px; }
 .workspace-message { margin: 8px 0 0; }
 
@@ -105,7 +107,6 @@ input::placeholder { color: #888888; }
 .filter-tab { padding: 0 0 10px; border: 0; background: transparent; color: var(--muted); font-size: 13px; cursor: pointer; }
 .filter-tab span { color: var(--muted); font-size: 12px; }
 .filter-tab.is-selected { color: var(--text); border-bottom: 2px solid var(--accent); }
-.list-label { color: var(--muted); font-size: 11px; }
 .todo-list { margin: 0; padding: 0; list-style: none; }
 .todo-item { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: start; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--border); }
 .check-button { width: 19px; height: 19px; margin-top: 2px; padding: 0; border: 1px solid #888888; border-radius: 3px; background: transparent; color: #ffffff; cursor: pointer; }
@@ -114,21 +115,19 @@ input::placeholder { color: #888888; }
 .todo-content { min-width: 0; }
 .todo-title { margin: 0; overflow-wrap: anywhere; font-size: 14px; }
 .todo-description { margin: 4px 0 0; overflow-wrap: anywhere; color: var(--muted); font-size: 13px; white-space: pre-wrap; }
+.todo-due-date { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
 .todo-item.is-complete .todo-title { color: var(--muted); text-decoration: line-through; }
 .todo-actions { display: flex; gap: 4px; }
-.icon-button { width: 30px; height: 30px; padding: 0; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.icon-button { min-height: 30px; padding: 0 4px; border: 0; background: transparent; color: var(--muted); font-size: 12px; text-decoration: underline; cursor: pointer; }
 .icon-button:hover { color: var(--text); }
-.icon-button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .empty-state { padding: 48px 20px; color: var(--muted); text-align: center; }
-.empty-symbol { display: none; }
 .empty-state p { margin: 0 0 4px; color: var(--text); font-size: 16px; }
 .empty-state > span:last-child { font-size: 13px; }
-.workspace-footer { display: flex; gap: 8px; padding-top: 20px; color: var(--muted); font-size: 12px; }
-.footer-dot { width: 3px; height: 3px; margin-top: 8px; border-radius: 50%; background: var(--muted); }
-.site-footer { display: none; }
+.workspace-footer { padding-top: 20px; color: var(--muted); font-size: 12px; }
 
 @media (max-width: 520px) {
   .auth-view { padding: 48px 0; }
+  .registration-fields { grid-template-columns: 1fr; gap: 0; }
   .todo-view { padding-top: 40px; }
   .workspace-heading { align-items: start; }
   .workspace-heading h1 { font-size: 26px; }
@@ -136,6 +135,5 @@ input::placeholder { color: #888888; }
   .composer-main { align-items: stretch; flex-wrap: wrap; }
   .composer #todo-title { min-width: calc(100% - 32px); }
   .add-button { margin-left: 32px; }
-  .list-label { display: none; }
   .todo-actions { opacity: 1; }
 }

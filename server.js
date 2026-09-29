@@ -41,7 +41,19 @@ function requireString(value, field, maxLength) {
   return normalized;
 }
 
-function validateCredentials(body) {
+function parseDueDate(value) {
+  if (value == null || value === '') return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    throw new HttpError(400, 'Due date must be valid');
+  }
+  return date;
+}
+
+function validateCredentials(body, includeProfile = false) {
+  const firstName = includeProfile ? requireString(body?.firstName, 'First name', 100) : '';
+  const lastName = includeProfile ? requireString(body?.lastName, 'Last name', 100) : '';
+  const gender = includeProfile ? requireString(body?.gender, 'Gender', 30) : '';
   const email = requireString(body?.email, 'Email', 254).toLowerCase();
   const password = body?.password;
   if (typeof password !== 'string' || password.length < 8 || password.length > 72) {
@@ -50,7 +62,7 @@ function validateCredentials(body) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new HttpError(400, 'Enter a valid email address');
   }
-  return { email, password };
+  return { firstName, lastName, gender, email, password };
 }
 
 function authenticate(req) {
@@ -113,14 +125,14 @@ async function handleRequest(req, res) {
   }
 
   if (req.method === 'POST' && pathname === '/api/auth/register') {
-    const { email, password } = validateCredentials(await parseBody(req));
+    const { firstName, lastName, gender, email, password } = validateCredentials(await parseBody(req), true);
     const existingUser = await prisma.user.findUnique({ where: { email }, select: { id: true } });
     if (existingUser) {
       throw new HttpError(409, 'An account with this email already exists');
     }
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
     try {
-      await prisma.user.create({ data: { email, password: hashedPassword } });
+      await prisma.user.create({ data: { firstName, lastName, gender, email, password: hashedPassword } });
     } catch (error) {
       if (error.code === 'P2002') {
         throw new HttpError(409, 'An account with this email already exists');
@@ -157,8 +169,9 @@ async function handleRequest(req, res) {
     const body = await parseBody(req);
     const title = requireString(body?.title, 'Title', 255);
     const description = body?.description == null ? null : requireString(body.description, 'Description', 10000);
+    const dueAt = parseDueDate(body?.dueAt);
     const todo = await prisma.todo.create({
-      data: { title, description, userId: user.userId }
+      data: { title, description, dueAt, userId: user.userId }
     });
     sendJson(res, 201, { success: true, data: todo });
     return;
@@ -181,6 +194,9 @@ async function handleRequest(req, res) {
       }
       if (Object.hasOwn(body ?? {}, 'description')) {
         data.description = body.description == null ? null : requireString(body.description, 'Description', 10000);
+      }
+      if (Object.hasOwn(body ?? {}, 'dueAt')) {
+        data.dueAt = parseDueDate(body.dueAt);
       }
       if (Object.hasOwn(body ?? {}, 'isCompleted')) {
         if (typeof body.isCompleted !== 'boolean') {
