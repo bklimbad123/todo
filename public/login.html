@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff"> -->
+    <title>To-do list | Sign in</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/auth.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="topbar">
+        <a class="wordmark" href="/">To-do list</a>
+      </header>
+      <section class="auth-view" aria-labelledby="auth-title">
+        <div class="auth-copy">
+          <h1 id="auth-title">Keep track of your tasks.</h1>
+          <p class="intro">Sign in to manage your to-do list.</p>
+        </div>
+        <div class="auth-form-wrap">
+          <div class="auth-tabs" role="tablist" aria-label="Account access">
+            <button class="auth-tab is-selected" id="login-tab" type="button" role="tab" aria-selected="true">Sign in</button>
+            <button class="auth-tab" id="register-tab" type="button" role="tab" aria-selected="false">Create account</button>
+          </div>
+          <form id="auth-form">
+            <h2 id="form-heading">Welcome back</h2>
+            <p class="form-caption" id="form-caption">Pick up where you left off.</p>
+            <div class="registration-fields hidden" id="registration-fields">
+              <div>
+                <label for="first-name">First name</label>
+                <input id="first-name" name="firstName" type="text" autocomplete="given-name" maxlength="100">
+              </div>
+              <div>
+                <label for="last-name">Last name</label>
+                <input id="last-name" name="lastName" type="text" autocomplete="family-name" maxlength="100">
+              </div>
+              <div>
+                <label for="gender">Gender</label>
+                <select id="gender" name="gender" autocomplete="sex">
+                  <option value="">Select gender</option>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                  <option value="prefer-not-to-say">Prefer not to say</option>
+                </select>
+              </div>
+            </div>
+            <label for="email">Email address</label>
+            <input id="email" name="email" type="email" autocomplete="email" required maxlength="254">
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required minlength="8" maxlength="72">
+            <p class="status-message" id="auth-message" role="status" aria-live="polite"></p>
+            <button class="button button-primary auth-submit" id="auth-submit" type="submit">Sign in</button>
+          </form>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

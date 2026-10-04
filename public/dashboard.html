@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff">
+    <title>To-do list | Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/dashboard.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="topbar">
+        <a class="wordmark" href="/dashboard">To-do list</a>
+        <div class="topbar-right">
+          <span class="today-label" id="today-label"></span>
+          <button class="text-button" id="logout-button" type="button">Sign out</button>
+        </div>
+      </header>
+      <section class="todo-view" aria-labelledby="greeting">
+        <div class="workspace-heading">
+          <div>
+            <p id="workspace-date"></p>
+            <h1 id="greeting">Your tasks</h1>
+          </div>
+          <div class="progress-stamp" aria-live="polite">
+            <span class="progress-number" id="progress-number">0/0</span>
+            <span class="progress-caption">done</span>
+          </div>
+        </div>
+        <form class="composer" id="todo-form">
+          <div class="list-controls">
+            <select id="todo-list-id" name="listId" aria-label="Task list" required>
+              <option value="" disabled selected>Select a list</option>
+            </select>
+            <input id="new-list-name" type="text" placeholder="New list name" maxlength="100" aria-label="New list name">
+            <button class="button" id="create-list" type="button">Create list</button>
+          </div>
+          <div class="composer-main">
+            <input id="todo-title" name="title" type="text" placeholder="What needs your attention?" maxlength="255" required autocomplete="off" aria-label="New task title">
+            <button class="button button-primary add-button" type="submit">Add task</button>
+          </div>
+          <input id="todo-description" name="description" type="text" placeholder="Add a note (optional)" maxlength="10000" aria-label="Optional task note">
+          <label class="due-date-label" for="todo-due-at">Due date and time</label>
+          <input id="todo-due-at" name="dueAt" type="datetime-local" aria-label="Task due date and time">
+        </form>
+        <p class="status-message workspace-message" id="todo-message" role="status" aria-live="polite"></p>
+        <div class="list-toolbar">
+          <div class="filter-tabs" role="tablist" aria-label="Filter tasks">
+            <button class="filter-tab is-selected" type="button" data-filter="all" aria-pressed="true">All <span id="all-count">0</span></button>
+            <button class="filter-tab" type="button" data-filter="active" aria-pressed="false">To do <span id="active-count">0</span></button>
+            <button class="filter-tab" type="button" data-filter="completed" aria-pressed="false">Done <span id="completed-count">0</span></button>
+          </div>
+        </div>
+        <ul class="todo-list" id="todo-list" aria-label="Todo list"></ul>
+        <div class="empty-state" id="empty-state">
+          <p id="empty-title">Nothing on the list yet.</p>
+          <span id="empty-caption">Add a task above to get started.</span>
+        </div>
+        <footer class="workspace-footer"><span id="footer-count">0 open tasks</span></footer>
+      </section>
+    </main>
+  </body>
+</html>

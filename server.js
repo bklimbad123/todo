@@ -112,15 +112,27 @@ async function handleRequest(req, res) {
   const pathname = requestUrl.pathname;
 
   if (req.method === 'GET' && pathname === '/') {
-    await serveStatic(res, 'index.html', 'text/html; charset=utf-8');
+    await serveStatic(res, 'login.html', 'text/html; charset=utf-8');
+    return;
+  }
+  if (req.method === 'GET' && pathname === '/login') {
+    await serveStatic(res, 'login.html', 'text/html; charset=utf-8');
+    return;
+  }
+  if (req.method === 'GET' && pathname === '/dashboard') {
+    await serveStatic(res, 'dashboard.html', 'text/html; charset=utf-8');
     return;
   }
   if (req.method === 'GET' && pathname === '/styles.css') {
     await serveStatic(res, 'styles.css', 'text/css; charset=utf-8');
     return;
   }
-  if (req.method === 'GET' && pathname === '/app.js') {
-    await serveStatic(res, 'app.js', 'application/javascript; charset=utf-8');
+  if (req.method === 'GET' && pathname === '/auth.js') {
+    await serveStatic(res, 'auth.js', 'application/javascript; charset=utf-8');
+    return;
+  }
+  if (req.method === 'GET' && pathname === '/dashboard.js') {
+    await serveStatic(res, 'dashboard.js', 'application/javascript; charset=utf-8');
     return;
   }
 
