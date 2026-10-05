@@ -16,23 +16,6 @@ const workspaceMode = document.querySelector('#workspace-mode');
 const signInLink = document.querySelector('#sign-in-link');
 const logoutButton = document.querySelector('#logout-button');
 
-function readGuestSet(key) {
-  try {
-    const raw = sessionStorage.getItem(key);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? new Set(parsed) : new Set();
-  } catch {
-    return new Set();
-  }
-}
-
-function syncGuestSet(key, set) {
-  sessionStorage.setItem(key, JSON.stringify([...set]));
-}
-
-guestLists = readGuestSet(`${APP_KEY}-guest-lists`);
-guestTodos = readGuestSet(`${APP_KEY}-guest-todos`);
-
 function setMessage(text, success = false) {
   todoMessage.textContent = text;
   todoMessage.classList.toggle('is-success', success);
@@ -146,7 +129,6 @@ async function createList() {
     const list = { id: crypto.randomUUID(), name };
     guestLists = new Set(guestLists);
     guestLists.add(list);
-    syncGuestSet(`${APP_KEY}-guest-lists`, guestLists);
     listSelect.append(new Option(list.name, list.id));
     listSelect.value = list.id;
     newListName.value = '';
@@ -174,7 +156,6 @@ async function updateTodo(id, changes) {
     if (!existingTodo) return;
     const updated = { ...existingTodo, ...changes };
     guestTodos = new Set(currentTodos.map((todo) => todo.id === id ? updated : todo));
-    syncGuestSet(`${APP_KEY}-guest-todos`, guestTodos);
     renderTodos();
   } catch (error) {
     setMessage(error.message);
@@ -204,7 +185,6 @@ async function deleteTodo(todo) {
   }
 
   guestTodos = new Set([...guestTodos].filter((item) => item.id !== todo.id));
-  syncGuestSet(`${APP_KEY}-guest-todos`, guestTodos);
   renderTodos();
 }
 
@@ -251,7 +231,6 @@ todoForm.addEventListener('submit', async (event) => {
 
     const created = { ...todo, id: crypto.randomUUID(), isCompleted: false };
     guestTodos = new Set([created, ...guestTodos]);
-    syncGuestSet(`${APP_KEY}-guest-todos`, guestTodos);
     todoForm.reset();
     listSelect.value = '';
     renderTodos();
