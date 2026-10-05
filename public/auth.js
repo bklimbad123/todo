@@ -61,7 +61,7 @@ form.addEventListener('submit', async (event) => {
       setMessage('Account created. Sign in to continue.', true);
       return;
     }
-    localStorage.setItem('daymark-token', result.token);
+    localStorage.setItem('todo-token', result.token);
     window.location.href = '/dashboard';
   } catch (error) {
     setMessage(error.message);
@@ -70,4 +70,4 @@ form.addEventListener('submit', async (event) => {
   }
 });
 
-if (localStorage.getItem('daymark-token')) window.location.href = '/dashboard';
+if (localStorage.getItem('todo-token')) window.location.href = '/dashboard';

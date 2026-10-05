@@ -1,9 +1,6 @@
-const MAX_BODY_BYTES = 1024 * 1024;
-
 function parseBody(req) {
   return new Promise((resolve, reject) => {
-    const chunks = [];
-    let size = 0;
+    const chunks = new Set();
     let settled = false;
 
     const fail = (error) => {
@@ -14,13 +11,7 @@ function parseBody(req) {
 
     req.on('data', (chunk) => {
       if (settled) return;
-      size += chunk.length;
-      if (size > MAX_BODY_BYTES) {
-        fail(Object.assign(new Error('Request body too large'), { statusCode: 413 }));
-        req.resume();
-        return;
-      }
-      chunks.push(chunk);
+      chunks.add(chunk);
     });
 
     req.once('error', fail);
@@ -28,7 +19,7 @@ function parseBody(req) {
     req.once('end', () => {
       if (settled) return;
       try {
-        const rawBody = Buffer.concat(chunks).toString('utf8');
+        const rawBody = Buffer.concat([...chunks]).toString('utf8');
         resolve(JSON.parse(rawBody));
       } catch (error) {
         fail(Object.assign(new Error('Invalid JSON body'), { statusCode: 400 }));

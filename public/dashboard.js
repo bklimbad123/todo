@@ -1,4 +1,5 @@
-const token = localStorage.getItem('daymark-token');
+const APP_KEY = 'todo';
+const token = localStorage.getItem(`${APP_KEY}-token`);
 const todoForm = document.querySelector('#todo-form');
 const todoList = document.querySelector('#todo-list');
 const emptyState = document.querySelector('#empty-state');
@@ -6,10 +7,31 @@ const todoMessage = document.querySelector('#todo-message');
 const listSelect = document.querySelector('#todo-list-id');
 const newListName = document.querySelector('#new-list-name');
 const createListButton = document.querySelector('#create-list');
+let lists = [];
 let todos = [];
+let guestLists = new Set();
+let guestTodos = new Set();
 let filter = 'all';
+const workspaceMode = document.querySelector('#workspace-mode');
+const signInLink = document.querySelector('#sign-in-link');
+const logoutButton = document.querySelector('#logout-button');
 
-if (!token) window.location.href = '/login';
+function readGuestSet(key) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? new Set(parsed) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function syncGuestSet(key, set) {
+  sessionStorage.setItem(key, JSON.stringify([...set]));
+}
+
+guestLists = readGuestSet(`${APP_KEY}-guest-lists`);
+guestTodos = readGuestSet(`${APP_KEY}-guest-todos`);
 
 function setMessage(text, success = false) {
   todoMessage.textContent = text;
@@ -27,14 +49,18 @@ async function request(path, options = {}) {
   });
   const result = await response.json();
   if (!response.ok) {
-    if (response.status === 401) window.location.href = '/login';
+    if (response.status === 401) {
+      localStorage.removeItem(`${APP_KEY}-token`);
+      window.location.href = '/';
+    }
     throw new Error(result.message || 'Something went wrong.');
   }
   return result;
 }
 
 function renderTodos() {
-  const visibleTodos = todos.filter((todo) => {
+  const currentTodos = token ? todos : [...guestTodos];
+  const visibleTodos = currentTodos.filter((todo) => {
     if (filter === 'active') return !todo.isCompleted;
     if (filter === 'completed') return todo.isCompleted;
     return true;
@@ -77,12 +103,12 @@ function renderTodos() {
     todoList.append(item);
   }
 
-  const completed = todos.filter((todo) => todo.isCompleted).length;
-  const active = todos.length - completed;
-  document.querySelector('#all-count').textContent = todos.length;
+  const completed = currentTodos.filter((todo) => todo.isCompleted).length;
+  const active = currentTodos.length - completed;
+  document.querySelector('#all-count').textContent = currentTodos.length;
   document.querySelector('#active-count').textContent = active;
   document.querySelector('#completed-count').textContent = completed;
-  document.querySelector('#progress-number').textContent = `${completed}/${todos.length}`;
+  document.querySelector('#progress-number').textContent = `${completed}/${currentTodos.length}`;
   document.querySelector('#footer-count').textContent = `${active} open ${active === 1 ? 'task' : 'tasks'}`;
   emptyState.classList.toggle('hidden', visibleTodos.length > 0);
 }
@@ -96,26 +122,33 @@ function actionButton(text, handler) {
   return button;
 }
 
-async function loadLists() {
-  const result = await request('/api/lists');
-  listSelect.replaceChildren(new Option('Select a list', '', true, true));
-  for (const list of result.data) listSelect.append(new Option(list.name, list.id));
-}
-
-async function loadTodos() {
-  const result = await request('/api/todos');
-  todos = result.data;
-  renderTodos();
-}
-
 async function createList() {
   const name = newListName.value.trim();
   if (!name) return;
   createListButton.disabled = true;
   try {
-    const result = await request('/api/lists', { method: 'POST', body: JSON.stringify({ name }) });
-    listSelect.append(new Option(result.data.name, result.data.id));
-    listSelect.value = result.data.id;
+    if (token) {
+      const list = (await request('/api/lists', { method: 'POST', body: JSON.stringify({ name }) })).data;
+      lists.push(list);
+      listSelect.append(new Option(list.name, list.id));
+      listSelect.value = list.id;
+      newListName.value = '';
+      setMessage('List created.', true);
+      return;
+    }
+
+    const exists = [...guestLists].some((list) => list.name.trim().toLowerCase() === name.toLowerCase());
+    if (exists) {
+      setMessage('A list with this name already exists.');
+      return;
+    }
+
+    const list = { id: crypto.randomUUID(), name };
+    guestLists = new Set(guestLists);
+    guestLists.add(list);
+    syncGuestSet(`${APP_KEY}-guest-lists`, guestLists);
+    listSelect.append(new Option(list.name, list.id));
+    listSelect.value = list.id;
     newListName.value = '';
     setMessage('List created.', true);
   } catch (error) {
@@ -127,38 +160,57 @@ async function createList() {
 
 async function updateTodo(id, changes) {
   try {
-    const result = await request(`/api/todos/${encodeURIComponent(id)}`, {
-      method: 'PUT', body: JSON.stringify(changes)
-    });
-    todos = todos.map((todo) => todo.id === id ? result.data : todo);
+    if (token) {
+      const updated = (await request(`/api/todos/${encodeURIComponent(id)}`, {
+        method: 'PUT', body: JSON.stringify(changes)
+      })).data;
+      todos = todos.map((todo) => todo.id === id ? updated : todo);
+      renderTodos();
+      return;
+    }
+
+    const currentTodos = [...guestTodos];
+    const existingTodo = currentTodos.find((todo) => todo.id === id);
+    if (!existingTodo) return;
+    const updated = { ...existingTodo, ...changes };
+    guestTodos = new Set(currentTodos.map((todo) => todo.id === id ? updated : todo));
+    syncGuestSet(`${APP_KEY}-guest-todos`, guestTodos);
     renderTodos();
   } catch (error) {
     setMessage(error.message);
   }
 }
 
-async function editTodo(todo) {
+function editTodo(todo) {
   const title = prompt('Task title', todo.title);
   if (title === null || !title.trim()) return;
   const description = prompt('Task note (optional)', todo.description || '');
   if (description === null) return;
-  await updateTodo(todo.id, { title, description });
+  updateTodo(todo.id, { title: title.trim(), description: description.trim() || null });
 }
 
 async function deleteTodo(todo) {
   if (!confirm(`Delete "${todo.title}"?`)) return;
-  try {
-    await request(`/api/todos/${encodeURIComponent(todo.id)}`, { method: 'DELETE' });
+  if (token) {
+    try {
+      await request(`/api/todos/${encodeURIComponent(todo.id)}`, { method: 'DELETE' });
+    } catch (error) {
+      setMessage(error.message);
+      return;
+    }
     todos = todos.filter((item) => item.id !== todo.id);
     renderTodos();
-  } catch (error) {
-    setMessage(error.message);
+    return;
   }
+
+  guestTodos = new Set([...guestTodos].filter((item) => item.id !== todo.id));
+  syncGuestSet(`${APP_KEY}-guest-todos`, guestTodos);
+  renderTodos();
 }
 
-document.querySelector('#logout-button').addEventListener('click', () => {
-  localStorage.removeItem('daymark-token');
-  window.location.href = '/login';
+logoutButton.addEventListener('click', () => {
+  localStorage.removeItem(`${APP_KEY}-token`);
+  window.location.href = '/';
 });
 createListButton.addEventListener('click', createList);
 document.querySelectorAll('.filter-tab').forEach((button) => {
@@ -173,17 +225,33 @@ todoForm.addEventListener('submit', async (event) => {
   const submit = todoForm.querySelector('button[type="submit"]');
   submit.disabled = true;
   const data = new FormData(todoForm);
+  const todo = {
+    title: data.get('title').trim(),
+    description: data.get('description').trim() || null,
+    dueAt: data.get('dueAt') ? new Date(data.get('dueAt')).toISOString() : null,
+    listId: data.get('listId')
+  };
   try {
-    const result = await request('/api/todos', {
-      method: 'POST',
-      body: JSON.stringify({
-        title: data.get('title'),
-        description: data.get('description') || null,
-        dueAt: data.get('dueAt') || null,
-        listId: data.get('listId')
-      })
-    });
-    todos.unshift(result.data);
+    if (token) {
+      const created = (await request('/api/todos', { method: 'POST', body: JSON.stringify(todo) })).data;
+      todos.unshift(created);
+      todoForm.reset();
+      listSelect.value = '';
+      renderTodos();
+      return;
+    }
+
+    const hasDuplicateTitle = [...guestTodos].some(
+      (item) => item.listId === todo.listId && item.title.trim().toLowerCase() === todo.title.toLowerCase()
+    );
+    if (hasDuplicateTitle) {
+      setMessage('A task with this title already exists in this list.');
+      return;
+    }
+
+    const created = { ...todo, id: crypto.randomUUID(), isCompleted: false };
+    guestTodos = new Set([created, ...guestTodos]);
+    syncGuestSet(`${APP_KEY}-guest-todos`, guestTodos);
     todoForm.reset();
     listSelect.value = '';
     renderTodos();
@@ -194,6 +262,21 @@ todoForm.addEventListener('submit', async (event) => {
   }
 });
 
+workspaceMode.textContent = token ? 'Saved account' : 'Temporary workspace';
+signInLink.classList.toggle('hidden', Boolean(token));
+logoutButton.classList.toggle('hidden', !token);
 document.querySelector('#today-label').textContent = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date());
 document.querySelector('#workspace-date').textContent = new Intl.DateTimeFormat(undefined, { dateStyle: 'full' }).format(new Date());
-Promise.all([loadLists(), loadTodos()]).catch((error) => setMessage(error.message));
+if (token) {
+  Promise.all([request('/api/lists'), request('/api/todos')])
+    .then(([listResult, todoResult]) => {
+      lists = listResult.data;
+      todos = todoResult.data;
+      listSelect.replaceChildren(new Option('Select a list', '', true, true));
+      for (const list of lists) listSelect.append(new Option(list.name, list.id));
+      renderTodos();
+    })
+    .catch((error) => setMessage(error.message));
+} else {
+  renderTodos();
+}

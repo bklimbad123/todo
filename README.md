@@ -54,8 +54,6 @@ npm run prisma:generate
 npm start
 ```
 
-Open [http://localhost:5000/login](http://localhost:5000/login) in your browser. After signing in, the dashboard is available at `/dashboard`. The server serves both pages and the API from the same origin. Set `PORT` in `.env` to choose a different port.
-
 ## API
 
 - `POST /api/auth/register` - create an account with `{ "firstName", "lastName", "gender", "email", "password" }`

@@ -112,7 +112,7 @@ async function handleRequest(req, res) {
   const pathname = requestUrl.pathname;
 
   if (req.method === 'GET' && pathname === '/') {
-    await serveStatic(res, 'login.html', 'text/html; charset=utf-8');
+    await serveStatic(res, 'dashboard.html', 'text/html; charset=utf-8');
     return;
   }
   if (req.method === 'GET' && pathname === '/login') {
