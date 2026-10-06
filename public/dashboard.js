@@ -4,15 +4,16 @@ const todoForm = document.querySelector('#todo-form');
 const todoList = document.querySelector('#todo-list');
 const emptyState = document.querySelector('#empty-state');
 const todoMessage = document.querySelector('#todo-message');
-const listSelect = document.querySelector('#todo-list-id');
-const newListName = document.querySelector('#new-list-name');
-const createListButton = document.querySelector('#create-list');
+const sidebarLists = document.querySelector('#sidebar-lists');
+const sidebarCreateListButton = document.querySelector('#sidebar-create-list');
+
+let selectedListId = null;
 let lists = [];
 let todos = [];
 let guestLists = new Set();
 let guestTodos = new Set();
 let filter = 'all';
-const workspaceMode = document.querySelector('#workspace-mode');
+
 const signInLink = document.querySelector('#sign-in-link');
 const logoutButton = document.querySelector('#logout-button');
 
@@ -41,9 +42,43 @@ async function request(path, options = {}) {
   return result;
 }
 
+function renderSidebarLists() {
+  sidebarLists.replaceChildren();
+
+  const currentLists = token ? lists : [...guestLists];
+
+  for (const list of currentLists) {
+    const button = document.createElement('button');
+
+    button.type = 'button';
+    button.className = 'sidebar-list';
+
+    if (list.id === selectedListId) {
+      button.classList.add('is-selected');
+    }
+
+    button.textContent = list.name;
+
+    button.addEventListener('click', () => {
+      selectedListId = list.id;
+
+      renderSidebarLists();
+      renderTodos();
+    });
+
+    sidebarLists.append(button);
+  }
+}
+
+
 function renderTodos() {
   const currentTodos = token ? todos : [...guestTodos];
-  const visibleTodos = currentTodos.filter((todo) => {
+
+  const selectedTodos = selectedListId
+    ? currentTodos.filter((todo) => todo.listId === selectedListId)
+    : [];
+
+  const visibleTodos = selectedTodos.filter((todo) => {
     if (filter === 'active') return !todo.isCompleted;
     if (filter === 'completed') return todo.isCompleted;
     return true;
@@ -86,8 +121,9 @@ function renderTodos() {
     todoList.append(item);
   }
 
-  const completed = currentTodos.filter((todo) => todo.isCompleted).length;
-  const active = currentTodos.length - completed;
+  const completed = selectedTodos.filter((todo) => todo.isCompleted).length;
+  const active = selectedTodos.length - completed;
+
   document.querySelector('#all-count').textContent = currentTodos.length;
   document.querySelector('#active-count').textContent = active;
   document.querySelector('#completed-count').textContent = completed;
@@ -106,57 +142,57 @@ function actionButton(text, handler) {
 }
 
 async function createList() {
-  const name = newListName.value.trim();
-  if (!name) return;
-  createListButton.disabled = true;
+  const name = prompt('Enter list name');
+
+  if (!name || !name.trim()) return;
+
+  const cleanName = name.trim();
+
   try {
     if (token) {
-      const list = (await request('/api/lists', { method: 'POST', body: JSON.stringify({ name }) })).data;
+      const list = (
+        await request('/api/lists', {
+          method: 'POST',
+          body: JSON.stringify({ name: cleanName })
+        })
+      ).data;
+
       lists.push(list);
-      listSelect.append(new Option(list.name, list.id));
-      listSelect.value = list.id;
-      newListName.value = '';
+      selectedListId = list.id;
+
+      renderSidebarLists();
+      renderTodos();
+
       setMessage('List created.', true);
+
       return;
     }
 
-    const exists = [...guestLists].some((list) => list.name.trim().toLowerCase() === name.toLowerCase());
+    const exists = [...guestLists].some(
+      (list) =>
+        list.name.trim().toLowerCase() === cleanName.toLowerCase()
+    );
+
     if (exists) {
       setMessage('A list with this name already exists.');
       return;
     }
 
-    const list = { id: crypto.randomUUID(), name };
+    const list = {
+      id: crypto.randomUUID(),
+      name: cleanName
+    };
+
     guestLists = new Set(guestLists);
     guestLists.add(list);
-    listSelect.append(new Option(list.name, list.id));
-    listSelect.value = list.id;
-    newListName.value = '';
-    setMessage('List created.', true);
-  } catch (error) {
-    setMessage(error.message);
-  } finally {
-    createListButton.disabled = false;
-  }
-}
 
-async function updateTodo(id, changes) {
-  try {
-    if (token) {
-      const updated = (await request(`/api/todos/${encodeURIComponent(id)}`, {
-        method: 'PUT', body: JSON.stringify(changes)
-      })).data;
-      todos = todos.map((todo) => todo.id === id ? updated : todo);
-      renderTodos();
-      return;
-    }
+    selectedListId = list.id;
 
-    const currentTodos = [...guestTodos];
-    const existingTodo = currentTodos.find((todo) => todo.id === id);
-    if (!existingTodo) return;
-    const updated = { ...existingTodo, ...changes };
-    guestTodos = new Set(currentTodos.map((todo) => todo.id === id ? updated : todo));
+    renderSidebarLists();
     renderTodos();
+
+    setMessage('List created.', true);
+
   } catch (error) {
     setMessage(error.message);
   }
@@ -192,7 +228,7 @@ logoutButton.addEventListener('click', () => {
   localStorage.removeItem(`${APP_KEY}-token`);
   window.location.href = '/';
 });
-createListButton.addEventListener('click', createList);
+sidebarCreateListButton.addEventListener('click', createList);
 document.querySelectorAll('.filter-tab').forEach((button) => {
   button.addEventListener('click', () => {
     filter = button.dataset.filter;
@@ -204,19 +240,27 @@ todoForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const submit = todoForm.querySelector('button[type="submit"]');
   submit.disabled = true;
-  const data = new FormData(todoForm);
-  const todo = {
-    title: data.get('title').trim(),
-    description: data.get('description').trim() || null,
-    dueAt: data.get('dueAt') ? new Date(data.get('dueAt')).toISOString() : null,
-    listId: data.get('listId')
-  };
+const data = new FormData(todoForm);
+
+if (!selectedListId) {
+  setMessage('Please select a list first.');
+  return;
+}
+
+const todo = {
+  title: data.get('title').trim(),
+  description: data.get('description').trim() || null,
+  dueAt: data.get('dueAt')
+    ? new Date(data.get('dueAt')).toISOString()
+    : null,
+  listId: selectedListId
+};
+
   try {
     if (token) {
       const created = (await request('/api/todos', { method: 'POST', body: JSON.stringify(todo) })).data;
       todos.unshift(created);
       todoForm.reset();
-      listSelect.value = '';
       renderTodos();
       return;
     }
@@ -232,7 +276,7 @@ todoForm.addEventListener('submit', async (event) => {
     const created = { ...todo, id: crypto.randomUUID(), isCompleted: false };
     guestTodos = new Set([created, ...guestTodos]);
     todoForm.reset();
-    listSelect.value = '';
+
     renderTodos();
   } catch (error) {
     setMessage(error.message);
@@ -241,7 +285,6 @@ todoForm.addEventListener('submit', async (event) => {
   }
 });
 
-workspaceMode.textContent = token ? 'Saved account' : 'Temporary workspace';
 signInLink.classList.toggle('hidden', Boolean(token));
 logoutButton.classList.toggle('hidden', !token);
 document.querySelector('#today-label').textContent = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date());
@@ -251,11 +294,23 @@ if (token) {
     .then(([listResult, todoResult]) => {
       lists = listResult.data;
       todos = todoResult.data;
-      listSelect.replaceChildren(new Option('Select a list', '', true, true));
-      for (const list of lists) listSelect.append(new Option(list.name, list.id));
+      if (lists.length > 0) {
+        selectedListId = lists[0].id;
+      }
+
+      renderSidebarLists();
       renderTodos();
+
     })
     .catch((error) => setMessage(error.message));
 } else {
+  const guestListArray = [...guestLists];
+
+  if (guestListArray.length > 0) {
+    selectedListId = guestListArray[0].id;
+  }
+
+  renderSidebarLists();
   renderTodos();
 }
+

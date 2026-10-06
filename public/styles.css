@@ -25,12 +25,14 @@ button { color: inherit; }
 .hidden { display: none !important; }
 
 .page-shell {
-  width: min(100% - 32px, 760px);
+  width: auto;
   min-height: 100vh;
-  margin: 0 auto;
+  margin-left: 240px;
+  padding: 0 32px;
   display: flex;
   flex-direction: column;
 }
+
 
 .topbar {
   min-height: 64px;
@@ -92,11 +94,6 @@ input::placeholder { color: #888888; }
 .progress-caption { display: block; font-size: 11px; }
 
 .composer { padding: 16px; border: 1px solid var(--border); background: var(--surface); }
-.list-controls { display: flex; gap: 8px; margin-bottom: 12px; }
-.list-controls select, .list-controls input { height: 36px; }
-.list-controls select { flex: 1; }
-.list-controls input { width: 150px; }
-.list-controls .button { min-height: 36px; padding: 0 10px; }
 .composer-main { display: flex; align-items: center; gap: 10px; }
 .composer input { height: 38px; border: 0; background: transparent; box-shadow: none; }
 .composer input:focus { box-shadow: none; }
@@ -143,4 +140,110 @@ input::placeholder { color: #888888; }
   .composer #todo-title { min-width: calc(100% - 32px); }
   .add-button { margin-left: 32px; }
   .todo-actions { opacity: 1; }
+}
+
+.sidebar {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+
+  width: 240px;
+  height: 100vh;
+
+  background: #f7f7f7;
+
+  border-right: 1px solid #d6d6d6;
+
+  z-index: 9999;
+
+  display: block;
+}
+
+.sidebar-header {
+  height: 64px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 20px;
+
+  border-bottom: 1px solid #d6d6d6;
+}
+
+.sidebar-logo {
+  color: #222;
+  font-size: 18px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.sidebar-section {
+  padding: 20px 12px;
+}
+
+.sidebar-section-title {
+  margin-bottom: 10px;
+  padding: 0 8px;
+
+  color: #666;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.sidebar-lists {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-list {
+  width: 100%;
+
+  padding: 9px 10px;
+
+  border: 0;
+  border-radius: 5px;
+
+  background: transparent;
+  color: #222;
+
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.sidebar-list:hover {
+  background: #e5e5e5;
+}
+
+.sidebar-list.is-selected {
+  background: #dedede;
+  font-weight: bold;
+}
+
+/* CREATE LIST BUTTON */
+
+.sidebar-create-list {
+  display: block !important;
+
+  width: 100%;
+
+  margin-top: 15px;
+  padding: 10px;
+
+  border: 1px solid #222;
+  border-radius: 5px;
+
+  background: #222;
+  color: white;
+
+  font-size: 14px;
+  font-weight: bold;
+
+  cursor: pointer;
+}
+
+.sidebar-create-list:hover {
+  background: #444;
 }

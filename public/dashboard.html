@@ -9,6 +9,28 @@
     <script src="/dashboard.js" defer></script>
   </head>
   <body>
+    <aside class="sidebar">
+
+    <div class="sidebar-header">
+      <a class="sidebar-logo" href="/dashboard">
+        To-do list
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+
+    <div class="sidebar-section-title">
+      Lists
+    </div>
+
+    <nav class="sidebar-lists" id="sidebar-lists">
+      <!-- Lists will be added by JavaScript -->
+    </nav>
+    <button type="button" class="sidebar-create-list" id="sidebar-create-list"> + Create list </button>
+    </div>
+
+    </aside>
+
     <main class="page-shell">
       <header class="topbar">
         <a class="wordmark" href="/dashboard">To-do list</a>
@@ -30,18 +52,11 @@
           </div>
         </div>
         <form class="composer" id="todo-form">
-          <div class="list-controls">
-            <select id="todo-list-id" name="listId" aria-label="Task list" required>
-              <option value="" disabled selected>Select a list</option>
-            </select>
-            <input id="new-list-name" type="text" placeholder="New list name" maxlength="100" aria-label="New list name">
-            <button class="button" id="create-list" type="button">Create list</button>
-          </div>
           <div class="composer-main">
-            <input id="todo-title" name="title" type="text" placeholder="What needs your attention?" maxlength="255" required autocomplete="off" aria-label="New task title">
+            <input id="todo-title" name="title" type="text" placeholder="Title" maxlength="255" required autocomplete="off" aria-label="New task title">
             <button class="button button-primary add-button" type="submit">Add task</button>
           </div>
-          <input id="todo-description" name="description" type="text" placeholder="Add a note (optional)" maxlength="10000" aria-label="Optional task note">
+          <input id="todo-description" name="description" type="text" placeholder="details" maxlength="10000" aria-label="Optional task note">
           <label class="due-date-label" for="todo-due-at">Due date and time</label>
           <input id="todo-due-at" name="dueAt" type="datetime-local" aria-label="Task due date and time">
         </form>
