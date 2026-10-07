@@ -185,6 +185,31 @@ async function handleRequest(req, res) {
     return;
   }
 
+  const listMatch = pathname.match(/^\/api\/lists\/([^/]+)$/);
+  if (listMatch && (req.method === 'PUT' || req.method === 'DELETE')) {
+    const user = authenticate(req);
+    const id = listMatch[1];
+    const existingList = await prisma.taskList.findFirst({ where: { id, userId: user.userId } });
+    if (!existingList) {
+      throw new HttpError(404, 'List not found');
+    }
+
+    if (req.method === 'PUT') {
+      const body = await parseBody(req);
+      const name = requireString(body?.name, 'List name', 100);
+      const updatedList = await prisma.taskList.update({ where: { id }, data: { name } });
+      sendJson(res, 200, { success: true, data: updatedList });
+      return;
+    }
+
+    await prisma.$transaction([
+      prisma.todo.deleteMany({ where: { listId: id, userId: user.userId } }),
+      prisma.taskList.delete({ where: { id } })
+    ]);
+    sendJson(res, 200, { success: true, message: 'Deleted' });
+    return;
+  }
+
   if (req.method === 'GET' && pathname === '/api/todos') {
     const user = authenticate(req);
     const todos = await prisma.todo.findMany({

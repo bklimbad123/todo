@@ -6,6 +6,9 @@ const emptyState = document.querySelector('#empty-state');
 const todoMessage = document.querySelector('#todo-message');
 const sidebarLists = document.querySelector('#sidebar-lists');
 const sidebarCreateListButton = document.querySelector('#sidebar-create-list');
+const todoView = document.querySelector('.todo-view');
+const noListState = document.querySelector('#no-list-state');
+
 
 let selectedListId = null;
 let lists = [];
@@ -48,10 +51,14 @@ function renderSidebarLists() {
   const currentLists = token ? lists : [...guestLists];
 
   for (const list of currentLists) {
+    const row = document.createElement('div');
+    row.className = 'sidebar-list-row';
+
     const button = document.createElement('button');
 
     button.type = 'button';
     button.className = 'sidebar-list';
+    button.setAttribute('aria-pressed', String(list.id === selectedListId));
 
     if (list.id === selectedListId) {
       button.classList.add('is-selected');
@@ -66,19 +73,75 @@ function renderSidebarLists() {
       renderTodos();
     });
 
-    sidebarLists.append(button);
+    const actions = document.createElement('div');
+    actions.className = 'sidebar-list-actions';
+
+    const menuButton = document.createElement('button');
+    menuButton.type = 'button';
+    menuButton.className = 'sidebar-list-menu-toggle';
+    menuButton.textContent = '\u22ee';
+    menuButton.setAttribute('aria-label', `Options for ${list.name}`);
+    menuButton.setAttribute('aria-haspopup', 'menu');
+    menuButton.setAttribute('aria-expanded', 'false');
+
+    const menu = document.createElement('div');
+    menu.className = 'sidebar-list-menu hidden';
+    menu.setAttribute('role', 'menu');
+
+    const editButton = document.createElement('button');
+    editButton.type = 'button';
+    editButton.className = 'sidebar-list-menu-item';
+    editButton.textContent = 'Edit';
+    editButton.setAttribute('role', 'menuitem');
+    editButton.addEventListener('click', () => editList(list));
+
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'sidebar-list-menu-item is-danger';
+    deleteButton.textContent = 'Delete';
+    deleteButton.setAttribute('role', 'menuitem');
+    deleteButton.addEventListener('click', () => deleteList(list));
+
+    menu.append(editButton, deleteButton);
+    menuButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const isOpen = !menu.classList.contains('hidden');
+      closeSidebarListMenus();
+      menu.classList.toggle('hidden', isOpen);
+      menuButton.setAttribute('aria-expanded', String(!isOpen));
+    });
+
+    actions.append(menuButton, menu);
+    row.append(button, actions);
+    sidebarLists.append(row);
   }
+}
+
+function closeSidebarListMenus() {
+  sidebarLists.querySelectorAll('.sidebar-list-menu').forEach((menu) => menu.classList.add('hidden'));
+  sidebarLists.querySelectorAll('.sidebar-list-menu-toggle').forEach((button) => button.setAttribute('aria-expanded', 'false'));
 }
 
 
 function renderTodos() {
+  const hasSelectedList = Boolean(selectedListId);
+  todoView.classList.toggle('hidden', !hasSelectedList);
+  noListState.classList.toggle('hidden', hasSelectedList);
+
+  if (!hasSelectedList) {
+    todoList.replaceChildren();
+    emptyState.classList.add('hidden');
+    return;
+  }
+
   const currentTodos = token ? todos : [...guestTodos];
 
-  const selectedTodos = selectedListId
-    ? currentTodos.filter((todo) => todo.listId === selectedListId)
-    : [];
+  const selectedTodos = currentTodos.filter(
+    (todo) => todo.listId === selectedListId
+  );
 
   const visibleTodos = selectedTodos.filter((todo) => {
+
     if (filter === 'active') return !todo.isCompleted;
     if (filter === 'completed') return todo.isCompleted;
     return true;
@@ -158,7 +221,6 @@ async function createList() {
       ).data;
 
       lists.push(list);
-      selectedListId = list.id;
 
       renderSidebarLists();
       renderTodos();
@@ -186,13 +248,67 @@ async function createList() {
     guestLists = new Set(guestLists);
     guestLists.add(list);
 
-    selectedListId = list.id;
-
     renderSidebarLists();
     renderTodos();
 
     setMessage('List created.', true);
 
+  } catch (error) {
+    setMessage(error.message);
+  }
+}
+
+async function editList(list) {
+  const name = prompt('List name', list.name);
+  if (name === null) return;
+
+  const cleanName = name.trim();
+  if (!cleanName) return;
+
+  try {
+    if (token) {
+      const updatedList = (await request(`/api/lists/${encodeURIComponent(list.id)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name: cleanName })
+      })).data;
+      lists = lists.map((item) => item.id === list.id ? updatedList : item);
+    } else {
+      const exists = [...guestLists].some(
+        (item) => item.id !== list.id && item.name.trim().toLowerCase() === cleanName.toLowerCase()
+      );
+      if (exists) {
+        setMessage('A list with this name already exists.');
+        return;
+      }
+      guestLists = new Set([...guestLists].map(
+        (item) => item.id === list.id ? { ...item, name: cleanName } : item
+      ));
+    }
+
+    renderSidebarLists();
+    setMessage('List updated.', true);
+  } catch (error) {
+    setMessage(error.message);
+  }
+}
+
+async function deleteList(list) {
+  if (!confirm(`Delete "${list.name}" and all its tasks?`)) return;
+
+  try {
+    if (token) {
+      await request(`/api/lists/${encodeURIComponent(list.id)}`, { method: 'DELETE' });
+      lists = lists.filter((item) => item.id !== list.id);
+      todos = todos.filter((todo) => todo.listId !== list.id);
+    } else {
+      guestLists = new Set([...guestLists].filter((item) => item.id !== list.id));
+      guestTodos = new Set([...guestTodos].filter((todo) => todo.listId !== list.id));
+    }
+
+    if (selectedListId === list.id) selectedListId = null;
+    renderSidebarLists();
+    renderTodos();
+    setMessage('List deleted.', true);
   } catch (error) {
     setMessage(error.message);
   }
@@ -229,6 +345,10 @@ logoutButton.addEventListener('click', () => {
   window.location.href = '/';
 });
 sidebarCreateListButton.addEventListener('click', createList);
+document.addEventListener('click', closeSidebarListMenus);
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') closeSidebarListMenus();
+});
 document.querySelectorAll('.filter-tab').forEach((button) => {
   button.addEventListener('click', () => {
     filter = button.dataset.filter;
@@ -294,9 +414,6 @@ if (token) {
     .then(([listResult, todoResult]) => {
       lists = listResult.data;
       todos = todoResult.data;
-      if (lists.length > 0) {
-        selectedListId = lists[0].id;
-      }
 
       renderSidebarLists();
       renderTodos();
@@ -304,11 +421,6 @@ if (token) {
     })
     .catch((error) => setMessage(error.message));
 } else {
-  const guestListArray = [...guestLists];
-
-  if (guestListArray.length > 0) {
-    selectedListId = guestListArray[0].id;
-  }
 
   renderSidebarLists();
   renderTodos();

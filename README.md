@@ -60,6 +60,8 @@ npm start
 - `POST /api/auth/login` - sign in; returns a JWT and user details
 - `GET /api/lists` - list the authenticated user's task lists
 - `POST /api/lists` - create a list with `{ "name" }`
+- `PUT /api/lists/:id` - rename a list with `{ "name" }`
+- `DELETE /api/lists/:id` - delete a list and its todos
 - `GET /api/todos` - list the authenticated user's todos
 - `POST /api/todos` - create a todo with `{ "title", "description", "dueAt", "listId" }`; `listId` is required
 - `PUT /api/todos/:id` - update a todo's `title`, `description`, `dueAt`, `listId`, and/or `isCompleted`
