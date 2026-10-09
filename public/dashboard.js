@@ -322,6 +322,27 @@ function editTodo(todo) {
   updateTodo(todo.id, { title: title.trim(), description: description.trim() || null });
 }
 
+async function updateTodo(id, updates) {
+  try {
+    if (token) {
+      const updatedTodo = (await request(`/api/todos/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates)
+      })).data;
+      todos = todos.map((todo) => todo.id === id ? updatedTodo : todo);
+    } else {
+      guestTodos = new Set([...guestTodos].map(
+        (todo) => todo.id === id ? { ...todo, ...updates } : todo
+      ));
+    }
+
+    renderTodos();
+    setMessage('Task updated.', true);
+  } catch (error) {
+    setMessage(error.message);
+  }
+}
+
 async function deleteTodo(todo) {
   if (!confirm(`Delete "${todo.title}"?`)) return;
   if (token) {
