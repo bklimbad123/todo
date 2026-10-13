@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Todo` ADD COLUMN `dueAt` DATETIME(3) NULL;
